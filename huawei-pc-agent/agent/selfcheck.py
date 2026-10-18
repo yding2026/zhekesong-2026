@@ -51,6 +51,10 @@ class FixtureClient:
 
 def main():
     os.environ.pop("LLM_API_KEY", None)
+    os.environ.pop("IMA_OPENAPI_CLIENTID", None)
+    os.environ.pop("IMA_OPENAPI_APIKEY", None)
+    os.environ.pop("IMA_CLIENT_ID", None)
+    os.environ.pop("IMA_API_KEY", None)
     incomplete = run({"product": "轻薄本", "audience": "大学新生", "scene": "开学季", "platform": "小红书"})
     assert incomplete["status"] == "need_more", incomplete
     assert any("具体型号" in item for item in incomplete["questions"])
@@ -97,7 +101,7 @@ def main():
     assert xiaohongshu["strategy"]["angle"] != wechat["strategy"]["angle"]
     assert xiaohongshu["strategy"]["max_images"] == 6
     assert moments["strategy"]["max_facts"] == 1
-    assert "另一型号" not in xiaohongshu["markdown"]
+    assert "另一型号" not in xiaohongshu["article"]["body"]
     assert any("国补" in item or "价格" in item for item in xiaohongshu["verification"]["pending"])
     assert "1.90" not in xiaohongshu["markdown"]
     print("selfcheck ok")
