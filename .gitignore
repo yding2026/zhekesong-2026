@@ -1,0 +1,7 @@
+# 密钥与本地缓存，不要提交
+.env
+.ima-cache/
+__pycache__/
+*.pyc
+.DS_Store
+examples/*.local.json

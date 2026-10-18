@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>华为 PC 营销软文智能体</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>华为 PC 营销软文智能体</h1>
+      <p class="sub">一次只处理一个任务：理解场景，检索 ima，生成软文，再做事实和合规核验。</p>
+    </div>
+    <div id="status" class="status">正在检查凭证</div>
+  </header>
+  <main class="layout">
+    <form id="task" class="panel">
+      <label for="product">产品型号</label>
+      <input id="product" name="product" placeholder="填写知识库中的具体型号">
+      <label for="audience">目标人群</label>
+      <input id="audience" name="audience" placeholder="例如：准备开学的大学新生">
+      <label for="scene">业务场景</label>
+      <select id="scene" name="scene">
+        <option value="">请选择</option>
+        <option>开学季</option>
+        <option>职场办公</option>
+        <option>内容创作</option>
+        <option>家庭换新</option>
+        <option>企业采购</option>
+        <option>门店到访</option>
+        <option>新品首发</option>
+        <option>节日营销</option>
+      </select>
+      <label for="platform">发布平台</label>
+      <select id="platform" name="platform">
+        <option value="">请选择</option>
+        <option>公众号</option>
+        <option>小红书</option>
+        <option>门店朋友圈</option>
+        <option>门店海报</option>
+      </select>
+      <label for="stage">购买阶段（可选）</label>
+      <select id="stage" name="stage">
+        <option value="">未说明</option>
+        <option>了解</option>
+        <option>对比</option>
+        <option>到店</option>
+        <option>决定购买</option>
+      </select>
+      <label for="extra">临时修改（可选）</label>
+      <textarea id="extra" name="extra" placeholder="例如：改成朋友圈，或不要写价格"></textarea>
+      <div class="actions">
+        <button class="primary" type="submit">生成</button>
+        <button class="ghost" id="sample" type="button">填入开学季示例</button>
+      </div>
+      <p class="hint">型号、参数和图片只来自 ima 共享知识库。资料里没有的价格和补贴不会写进正文。</p>
+    </form>
+    <section id="result" class="sheet">
+      <h2>等待任务</h2>
+      <p class="hint">先填写左侧任务。信息不完整时，这里只会追问，不会生成软文。</p>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

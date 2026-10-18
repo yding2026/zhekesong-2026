@@ -1,0 +1,120 @@
+:root {
+  --paper: #f3efe6;
+  --ink: #1d1a17;
+  --muted: #6d645c;
+  --line: #e2d8cc;
+  --card: #fffdf8;
+  --red: #c8102e;
+  --green: #1f6b45;
+  --warn: #8a5a12;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 40px 12px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.sub { margin: 0; color: var(--muted); }
+
+.status {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  padding: 12px 40px 40px;
+}
+
+.panel, .sheet {
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.panel { padding: 20px; }
+
+label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+textarea { min-height: 72px; resize: vertical; }
+
+.actions { display: flex; gap: 8px; margin-top: 18px; }
+
+button {
+  border: 0;
+  padding: 10px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary { background: var(--red); color: white; }
+.ghost { background: transparent; border: 1px solid var(--line); }
+
+.hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.sheet { padding: 28px 32px 40px; min-height: 70vh; }
+
+.sheet h2 {
+  margin: 28px 0 10px;
+  font-size: 18px;
+}
+
+.sheet h2:first-child { margin-top: 0; }
+
+.ask, .stop {
+  padding: 12px 14px;
+  background: #fff7ea;
+  border-left: 3px solid var(--warn);
+}
+
+.kv { margin: 0; padding-left: 18px; line-height: 1.7; }
+
+.body {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.ok { color: var(--green); }
+.warn { color: var(--warn); }
+
+.toolbar { display: flex; gap: 8px; margin-top: 18px; }
+
+@media (max-width: 900px) {
+  .top, .layout { padding-left: 16px; padding-right: 16px; }
+  .layout { grid-template-columns: 1fr; }
+}
