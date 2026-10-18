@@ -1,4 +1,4 @@
-# 本地工作台。只监听本机，页面和接口都不回显密钥。
+# 工作台。本地默认只监听本机；魔搭容器通过环境变量改成对外端口。页面和接口都不回显密钥。
 
 import json
 import os
@@ -15,8 +15,6 @@ from agent.ima_client import credentials_configured
 from agent.pipeline import run
 
 STATIC = ROOT / "static"
-HOST = "127.0.0.1"
-PORT = 8765
 
 
 def load_dotenv():
@@ -88,8 +86,11 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     load_dotenv()
-    server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print("工作台已启动：http://%s:%s" % (HOST, PORT))
+    # 容器里由平台注入 HOST=0.0.0.0、PORT=7860。本地不设置时仍只开在本机。
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8765"))
+    server = ThreadingHTTPServer((host, port), Handler)
+    print("工作台已启动：http://%s:%s" % (host, port))
     server.serve_forever()
 
 

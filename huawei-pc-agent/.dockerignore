@@ -1,0 +1,8 @@
+.env
+.git
+.ima-cache
+**/__pycache__
+**/*.pyc
+modelscope-studio
+_run_once.py
+_run_result.md
