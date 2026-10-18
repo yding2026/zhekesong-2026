@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 examples/*.local.json
+ima-skill/.history/
+ima-skill/__MACOSX/
+_run_once.py
+_run_result.md

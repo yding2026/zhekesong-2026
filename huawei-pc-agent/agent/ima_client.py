@@ -121,11 +121,27 @@ class ImaClient:
         return _as_list(data, "info_list")
 
     def list_knowledge(self, kb_id, folder_id=""):
-        body = {"knowledge_base_id": kb_id, "cursor": "", "limit": 20}
-        if folder_id:
-            body["folder_id"] = folder_id
-        data = self.call("openapi/wiki/v1/get_knowledge_list", body)
-        return _split_entries(data)
+        """翻页浏览目录。media_type 99 是文件夹，其余带 media_id 的是文件。"""
+        files = []
+        folders = []
+        cursor = ""
+        for _ in range(20):
+            body = {"knowledge_base_id": kb_id, "cursor": cursor, "limit": 50}
+            if folder_id:
+                body["folder_id"] = folder_id
+            data = self.call("openapi/wiki/v1/get_knowledge_list", body)
+            if not isinstance(data, dict):
+                break
+            page_files, page_folders = _split_entries(data)
+            files.extend(page_files)
+            folders.extend(page_folders)
+            next_cursor = data.get("next_cursor") or ""
+            if data.get("is_end") or not next_cursor or next_cursor == cursor:
+                break
+            if not page_files and not page_folders:
+                break
+            cursor = next_cursor
+        return files, folders
 
     def get_media_info(self, media_id):
         return self.call("openapi/wiki/v1/get_media_info", {"media_id": media_id})
@@ -157,8 +173,13 @@ def _split_entries(data):
         for item in _as_list(data, key):
             if not isinstance(item, dict):
                 continue
-            if item.get("media_id"):
+            if item.get("media_type") == 99 or (item.get("folder_id") and not item.get("media_id")):
+                folder = dict(item)
+                folder["folder_id"] = item.get("folder_id") or item.get("media_id") or ""
+                folder["name"] = item.get("name") or item.get("title") or ""
+                folders.append(folder)
+            elif item.get("media_id"):
                 files.append(item)
-            elif item.get("folder_id") or item.get("name"):
+            elif item.get("name"):
                 folders.append(item)
     return files, folders

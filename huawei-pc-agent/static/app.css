@@ -22,7 +22,7 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  padding: 28px 40px 12px;
+  padding: 20px 40px 8px;
 }
 
 h1 {
@@ -54,11 +54,11 @@ h1 {
   border: 1px solid var(--line);
 }
 
-.panel { padding: 20px; }
+.panel { padding: 16px 18px 18px; }
 
 label {
   display: block;
-  margin: 14px 0 6px;
+  margin: 10px 0 4px;
   font-size: 14px;
 }
 
@@ -71,7 +71,7 @@ input, select, textarea {
   font: inherit;
 }
 
-textarea { min-height: 72px; resize: vertical; }
+textarea { min-height: 52px; resize: vertical; }
 
 .actions { display: flex; gap: 8px; margin-top: 18px; }
 

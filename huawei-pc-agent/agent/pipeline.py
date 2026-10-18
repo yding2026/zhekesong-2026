@@ -70,6 +70,8 @@ def _extract_lines(text, product):
     lines = []
     for raw in (text or "").splitlines():
         line = raw.strip().lstrip("-•*0123456789.、)） ").strip()
+        if line.startswith("#"):
+            continue
         if len(line) < 8 or len(line) > 180:
             continue
         if product_n in normalize(line) or UNIT_RE.search(line):
@@ -126,21 +128,103 @@ def _read_media_text(client, item):
 def _rank_facts(facts, priority):
     def score(fact):
         text = fact["text"]
+        rank = len(priority) + 1
         for index, word in enumerate(priority):
             if word in text:
-                return index
-        return len(priority) + 1
+                rank = index
+                break
+        # 完整句子优先于表格碎片，避免正文只剩「450 nits」这种半句。
+        complete = 0 if ("。" in text or "；" in text) else 1
+        return (rank, complete, -len(text))
 
     return sorted(facts, key=score)
 
 
+FACT_FILE_NAMES = ("产品事实.md", "article.md")
+SUPPORT_FILE_NAMES = ("卖点与限制.md",)
+IMAGE_FOLDER_NAMES = ("images", "商城款式图片")
+
+
+def _entry_name(item):
+    return (item.get("title") or item.get("name") or "").strip()
+
+
+def _same_model(title, product):
+    """型号要整段对齐。允许前面带华为品牌，不把「MateBook 14」配到「MateBook D 14」。"""
+    title_n = normalize(title)
+    product_n = normalize(product)
+    if not title_n or not product_n:
+        return False
+    if title_n == product_n:
+        return True
+    if not title_n.endswith(product_n):
+        return False
+    return title_n[: -len(product_n)] in ("huawei", "华为")
+
+
+def _expand_model_folder(client, kb_id, folder):
+    """打开型号目录，读取事实文件，并收集该型号自己的图片。"""
+    folder_id = folder.get("folder_id") or folder.get("media_id") or ""
+    model_name = _entry_name(folder)
+    files, subfolders = client.list_knowledge(kb_id, folder_id)
+    wanted = set(FACT_FILE_NAMES + SUPPORT_FILE_NAMES)
+    docs = []
+    for item in files:
+        if _entry_name(item) in wanted:
+            copied = dict(item)
+            copied["trusted_model"] = model_name
+            docs.append(copied)
+    docs.sort(key=lambda item: 0 if _entry_name(item) in FACT_FILE_NAMES else 1)
+    images = []
+    for sub in subfolders:
+        if _entry_name(sub) not in IMAGE_FOLDER_NAMES:
+            continue
+        pics, _nested = client.list_knowledge(kb_id, sub.get("folder_id") or "")
+        for pic in pics:
+            if not _is_image_item(pic):
+                continue
+            copied = dict(pic)
+            copied["trusted_model"] = model_name
+            images.append(copied)
+    has_fact = any(_entry_name(item) in FACT_FILE_NAMES for item in docs)
+    return docs, images, has_fact
+
+
+def _browse_model(client, kb_id, product):
+    """搜索不到型号目录时，从库根进入 P1，再按系列往下找。"""
+    files, folders = client.list_knowledge(kb_id)
+    if not files and len(folders) == 1:
+        files, folders = client.list_knowledge(kb_id, folders[0].get("folder_id") or "")
+    target = None
+    for folder in folders:
+        name = _entry_name(folder)
+        if "机密" in name:
+            continue
+        if "产品参数" in name or name.startswith("P1"):
+            target = folder
+            break
+    if target is None:
+        return [], []
+    _series_files, series = client.list_knowledge(kb_id, target.get("folder_id") or "")
+    for series_folder in series:
+        if "机密" in _entry_name(series_folder):
+            continue
+        _model_files, models = client.list_knowledge(kb_id, series_folder.get("folder_id") or "")
+        for model in models:
+            if not _same_model(_entry_name(model), product):
+                continue
+            docs, images, ready = _expand_model_folder(client, kb_id, model)
+            if ready:
+                return docs, images
+    return [], []
+
+
 def retrieve(client, product):
-    """按赛题顺序检索：先搜库，搜索为空时改浏览目录。"""
+    """按赛题顺序检索：先搜库，搜索不到可读事实时再浏览 P1 目录。"""
     kb = client.search_knowledge_base()
-    queries = [product, product + " 参数", product + " 图片"]
     found = []
     seen = set()
-    for query in queries:
+    for query in (product, product + " 参数"):
         for item in client.search_knowledge(kb["id"], query):
             media_id = item.get("media_id") or item.get("folder_id") or item.get("title")
             if media_id in seen:
@@ -148,39 +232,44 @@ def retrieve(client, product):
             seen.add(media_id)
             found.append(item)
     browsed = False
-    if not found:
+    found_docs = []
+    found_images = []
+    for item in found:
+        if item.get("media_type") != 99 or "机密" in _entry_name(item):
+            continue
+        if not _same_model(_entry_name(item), product):
+            continue
+        docs, images, ready = _expand_model_folder(client, kb["id"], item)
+        if ready:
+            found_docs, found_images = docs, images
+            break
+    if not found_docs:
         browsed = True
-        files, folders = client.list_knowledge(kb["id"])
-        target = None
-        for folder in folders:
-            name = folder.get("name") or ""
-            if "产品参数" in name or name.startswith("P1") or "P1" in name:
-                target = folder
-                break
-        if target:
-            folder_id = target.get("folder_id") or ""
-            files, _nested = client.list_knowledge(kb["id"], folder_id)
-        for item in files:
-            title = item.get("title") or item.get("name") or ""
-            if normalize(product) in normalize(title):
-                found.append(item)
+        found_docs, found_images = _browse_model(client, kb["id"], product)
+    if not found_docs:
+        # 夹具和没有型号目录的资料，仍使用搜索直接返回的文件。
+        found_docs = [item for item in found if item.get("media_type") != 99]
     documents = []
     images = []
     skipped_models = []
-    for item in found:
+    for item in found_docs + found_images:
         title = item.get("title") or item.get("name") or "未命名资料"
-        if _looks_like_other_model(title, product):
+        if not item.get("trusted_model") and _looks_like_other_model(title, product):
             skipped_models.append(title)
             continue
         if _is_image_item(item):
-            if normalize(product) not in normalize(title):
+            trusted = item.get("trusted_model") or ""
+            if not trusted and normalize(product) not in normalize(title):
                 skipped_models.append(title)
                 continue
+            source = "任德耀新建华为PC知识库 / "
+            if trusted:
+                source += trusted + " / "
             images.append(
                 {
                     "name": title,
                     "media_id": item.get("media_id") or "",
-                    "source": "任德耀新建华为PC知识库 / " + title,
+                    "source": source + title,
                 }
             )
             continue
